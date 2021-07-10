@@ -45,6 +45,8 @@ library LiquidityAmounts {
         return toUint128(FullMath.mulDiv(amount1, FixedPoint96.Q96, sqrtRatioBX96 - sqrtRatioAX96));
     }
 
+    // 根据amount0或amount1计算出对应的流动性
+
     /// @notice Computes the maximum amount of liquidity received for a given amount of token0, token1, the current
     /// pool prices and the prices at the tick boundaries
     /// @param sqrtRatioX96 A sqrt price representing the current pool prices

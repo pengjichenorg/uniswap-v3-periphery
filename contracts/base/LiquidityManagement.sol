@@ -34,6 +34,8 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
         if (amount1Owed > 0) pay(decoded.poolKey.token1, decoded.payer, msg.sender, amount1Owed);
     }
 
+    //  添加流动性需要的参数
+
     struct AddLiquidityParams {
         address token0;
         address token1;
@@ -47,6 +49,8 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
         uint256 amount1Min;
     }
 
+    // 添加流动性
+
     /// @notice Add liquidity to an initialized pool
     function addLiquidity(AddLiquidityParams memory params)
         internal
@@ -57,6 +61,9 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
             IUniswapV3Pool pool
         )
     {
+
+        // 根据token0, token1和fee这3个信息计算出交易对地址
+
         PoolAddress.PoolKey memory poolKey =
             PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee});
 
@@ -65,9 +72,13 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
         // compute the liquidity amount
         {
             (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
+
+            // 计算下边界和上边界的价格, 价格表示为P的开方
+
             uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(params.tickLower);
             uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(params.tickUpper);
 
+            // 计算获得的流动性
             liquidity = LiquidityAmounts.getLiquidityForAmounts(
                 sqrtPriceX96,
                 sqrtRatioAX96,
@@ -76,6 +87,8 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
                 params.amount1Desired
             );
         }
+
+        // 铸币ERC721token
 
         (amount0, amount1) = pool.mint(
             params.recipient,

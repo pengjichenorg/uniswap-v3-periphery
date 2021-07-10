@@ -30,43 +30,93 @@ contract NonfungiblePositionManager is
     PeripheryValidation,
     SelfPermit
 {
+
+    // 用户仓位信息
+
     // details about the uniswap position
     struct Position {
+
+        // 用于元交易
+
         // the nonce for permits
         uint96 nonce;
+
+        // ERC721的授权操作, 授权后, 对方可以用transferFrom将ERC721代币转移, 即仓位转移
+
         // the address that is approved for spending this token
         address operator;
+
+        // 交易对pool的id, 有map管理交易对地址->id的映射  
+
         // the ID of the pool with which this token is connected
         uint80 poolId;
+
+        // 仓位的价格范围, tickLower为价格下边界tick, tickUpper为价格上边界
+        // 仓位创建的时候, 价格的选择粒度就是两个相邻tick代表的价格差
+
         // the tick range of the position
         int24 tickLower;
         int24 tickUpper;
+
+        // 仓位流动性
+
         // the liquidity of the position
         uint128 liquidity;
+
+        // 仓位内侧单位流动性累积的手续费, token0和token1分别累积
+        // 用于计算仓位收取的手续费
+
         // the fee growth of the aggregate position as of the last action on the individual position
         uint256 feeGrowthInside0LastX128;
         uint256 feeGrowthInside1LastX128;
+
+        // 可领取的token0和token1的数量
+        // 每领取一次, tokensOwed0和tokensOwed1会减去对应的数量
+
         // how many uncollected tokens are owed to the position, as of the last computation
         uint128 tokensOwed0;
         uint128 tokensOwed1;
     }
 
+    // 交易对地址->交易对id映射管理
+    // 录所有交易池的地址和编号的对应关系
+
     /// @dev IDs of pools assigned by this contract
     mapping(address => uint80) private _poolIds;
 
+    // 记录交易池编号和PoolKey的对应关系
+    // PoolKey: uniswap-v3-periphery/contracts/libraries/PositionKey.sol
+    // PoolKey: 对 fee, tickLower, tickUpper 算keccak256 hash, 唯一确定一个position
+    
     /// @dev Pool keys by pool ID, to save on SSTOREs for position data
     mapping(uint80 => PoolAddress.PoolKey) private _poolIdToPoolKey;
+
+    // ERC721 tokenId -> position信息的映射管理
+    // 每个仓位都是一个ERC721token, 由一个tokenId唯一识别
+    // 所有交易池中的Position都归总管理，并赋予一个全局唯一的编号（_nextId)，从1开始。 每个Position由创建地址以及边界唯一确定
 
     /// @dev The token ID position data
     mapping(uint256 => Position) private _positions;
 
+    // ERC721的id从1开始自增
+
     /// @dev The ID of the next token that will be minted. Skips 0
     uint176 private _nextId = 1;
+
+    // 交易对id从1开始自增
+
     /// @dev The ID of the next pool that is used for the first time. Skips 0
     uint80 private _nextPoolId = 1;
 
+    // 令牌描述符
+
     /// @dev The address of the token descriptor contract, which handles generating token URIs for position tokens
     address private immutable _tokenDescriptor;
+
+
+    // _factory是核心功能(core)中的UniswapV3Factory的地址。
+    // _WETH9是ETH智能合约的地址。
+    // _tokenDescriptor是ERC721描述信息的接口地址
 
     constructor(
         address _factory,
