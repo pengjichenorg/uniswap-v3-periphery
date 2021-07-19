@@ -124,6 +124,11 @@ contract NonfungiblePositionManager is
         }
     }
 
+    // 创建新的position，添加流动性
+    // payble 可以接受eth
+    // 如果是首次添加流动性, 会mint NFT token
+    // 修改position和tick及其中的手续费累计信息
+
     /// @inheritdoc INonfungiblePositionManager
     function mint(MintParams calldata params)
         external
@@ -153,6 +158,7 @@ contract NonfungiblePositionManager is
             })
         );
 
+        // mint NFT token
         _mint(params.recipient, (tokenId = _nextId++));
 
         bytes32 positionKey = PositionKey.compute(address(this), params.tickLower, params.tickUpper);
@@ -194,6 +200,8 @@ contract NonfungiblePositionManager is
     // save bytecode by removing implementation of unused method
     function baseURI() public pure override returns (string memory) {}
 
+    // 在已有的position调整流动性
+
     /// @inheritdoc INonfungiblePositionManager
     function increaseLiquidity(IncreaseLiquidityParams calldata params)
         external
@@ -230,6 +238,9 @@ contract NonfungiblePositionManager is
 
         // this is now updated to the current transaction
         (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) = pool.positions(positionKey);
+
+        // 未领取手续费
+        // mint方法中因为是首次添加流动性, 所以没有可以累加的未领取手续费
 
         position.tokensOwed0 += uint128(
             FullMath.mulDiv(
