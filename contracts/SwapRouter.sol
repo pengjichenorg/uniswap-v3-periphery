@@ -53,6 +53,8 @@ contract SwapRouter is
         address payer;
     }
 
+    // 在swap完成后，结合IUniswapV3SwapCallback接口实现Swap的两种代币转账
+
     /// @inheritdoc IUniswapV3SwapCallback
     function uniswapV3SwapCallback(
         int256 amount0Delta,
@@ -93,9 +95,17 @@ contract SwapRouter is
         // allow swapping to the router address with address 0
         if (recipient == address(0)) recipient = address(this);
 
+        // 解析交易对的token0, token1和fee
+
         (address tokenIn, address tokenOut, uint24 fee) = data.path.decodeFirstPool();
 
+
+        // 两个token顺序是否是升序
+        // 是否是Token0转换为Token1, < : true, >= : false
+
         bool zeroForOne = tokenIn < tokenOut;
+
+        // 调用交易对的swap()
 
         (int256 amount0, int256 amount1) =
             getPool(tokenIn, tokenOut, fee).swap(
@@ -110,6 +120,10 @@ contract SwapRouter is
 
         return uint256(-(zeroForOne ? amount1 : amount0));
     }
+
+
+    // 单一交易池兑换, token0和token1直接构成交易对
+    // 指定输入token数量, 换取另一个token
 
     /// @inheritdoc ISwapRouter
     function exactInputSingle(ExactInputSingleParams calldata params)
@@ -127,6 +141,9 @@ contract SwapRouter is
         );
         require(amountOut >= params.amountOutMinimum, 'Too little received');
     }
+
+    // 多交易池兑换, token0和token1间接构成交易对
+    // 指定输入token数量, 换取另一个token
 
     /// @inheritdoc ISwapRouter
     function exactInput(ExactInputParams memory params)
@@ -198,6 +215,9 @@ contract SwapRouter is
         // so if no price limit has been specified, require this possibility away
         if (sqrtPriceLimitX96 == 0) require(amountOutReceived == amountOut);
     }
+
+    // 单一交易池兑换, token0和token1直接构成交易对
+    // 指定输出token数量, 用另一个token去兑换
 
     /// @inheritdoc ISwapRouter
     function exactOutputSingle(ExactOutputSingleParams calldata params)

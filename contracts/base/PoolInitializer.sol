@@ -9,6 +9,9 @@ import '../interfaces/IPoolInitializer.sol';
 
 /// @title Creates and initializes V3 Pools
 abstract contract PoolInitializer is IPoolInitializer, PeripheryImmutableState {
+
+    // 通过UniswapV3Factory查看是否已经存在对应的交易池，如果没有，创建交易池，如果有了但是还没有初始化，初始化交易池
+
     /// @inheritdoc IPoolInitializer
     function createAndInitializePoolIfNecessary(
         address token0,
